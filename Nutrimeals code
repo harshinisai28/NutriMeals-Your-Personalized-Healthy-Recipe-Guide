@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriMeals</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+ margin:0;
+ font-family:Poppins;
+ background:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836');
+ background-size:cover;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ height:100vh;
+}
+
+.phone{
+ width:380px;
+ height:720px;
+ background:rgba(255,255,255,0.95);
+ border-radius:30px;
+ overflow:hidden;
+ box-shadow:0 20px 40px rgba(0,0,0,0.4);
+ display:flex;
+ flex-direction:column;
+}
+
+.header{
+ background:#27ae60;
+ color:white;
+ text-align:center;
+ padding:15px;
+ font-weight:bold;
+}
+
+.overlay{
+ flex:1;
+ padding:12px;
+ overflow-y:auto;
+ position:relative;
+}
+
+.page{
+ position:absolute;
+ width:100%;
+ top:0;
+ left:0;
+ opacity:0;
+ transform:translateX(40px);
+ transition:0.4s;
+ pointer-events:none;
+}
+
+.page.active{
+ opacity:1;
+ transform:translateX(0);
+ position:relative;
+ pointer-events:auto;
+}
+
+input,select{
+ width:100%;
+ padding:10px;
+ margin-top:8px;
+ border-radius:12px;
+ border:1px solid #ccc;
+}
+
+button{
+ width:100%;
+ padding:10px;
+ margin-top:10px;
+ border:none;
+ border-radius:20px;
+ background:#27ae60;
+ color:white;
+ font-weight:bold;
+ cursor:pointer;
+}
+
+.card{
+ background:linear-gradient(135deg,#e8f5e9,#fff);
+ padding:10px;
+ border-radius:12px;
+ margin-top:10px;
+ text-align:center;
+}
+
+.card img{
+ width:100%;
+ height:100px;
+ object-fit:cover;
+ border-radius:10px;
+}
+
+.disease-grid{                                                \
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+}
+
+.nav{
+ display:flex;
+ justify-content:space-around;
+ background:white;
+ padding:10px;
+ border-top:1px solid #ddd;
+}
+
+.nav button{
+ background:none;
+ color:#27ae60;
+}
+
+.landing{
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:center;
+ height:100%;
+ text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<div class="phone">
+<div class="header">🌿 NutriMeals</div>
+
+<div class="overlay">
+
+<!-- LANDING -->
+<div id="landing" class="page active landing">
+<h1>🌿 NutriMeals</h1>
+<p>Your Personalized Diet Companion</p>
+<button onclick="goTo('login')">Get Started</button>
+</div>
+
+<!-- LOGIN -->
+<div id="login" class="page">
+<h3>Enter Your Name</h3>
+<input id="name" placeholder="Enter your name">
+<button onclick="login()">Continue</button>
+</div>
+
+<!-- HOME -->
+<div id="home" class="page">
+<h3 id="welcome"></h3>
+
+<input id="height" placeholder="Height (cm)">
+<input id="weight" placeholder="Weight (kg)">
+<input id="age" placeholder="Age">
+
+<select id="gender">
+<option value="">Select Gender</option>
+<option>Male</option>
+<option>Female</option>
+<option>Other</option>
+</select>
+
+<select id="foodType">
+<option value="">Food Preference</option>
+<option>Veg</option>
+<option>Non-Veg</option>
+<option>Both</option>
+</select>
+
+<button onclick="generatePlan()">Get Diet Plan</button>
+
+<p id="bmi"></p>
+<p id="result"></p>
+<div id="mealPlan"></div>
+</div>
+
+<!-- WOMEN -->
+<div id="women" class="page">
+<h3>Women Health</h3>
+
+<select id="womenType">
+<option>Pregnancy</option>
+<option>PCOS</option>
+<option>Menstruation</option>
+<option>Anemia</option>
+</select>
+
+<button onclick="loadWomen()">Show</button>
+<div id="womenResult" class="disease-grid"></div>
+</div>
+
+<!-- DISEASE -->
+<div id="disease" class="page">
+<h3>Disease Diet</h3>
+
+<select id="diseaseType">
+<option>Diabetes</option>
+<option>Obesity</option>
+<option>Hypertension</option>
+<option>Heart</option>
+<option>Immunity</option>
+<option>Thyroid</option>
+<option>Anemia</option>
+<option>PCOS</option>
+</select>
+
+<button onclick="loadDisease()">Show</button>
+<div id="diseaseResult"></div>
+</div>
+
+<!-- TRACK -->
+<div id="track" class="page">
+<h3>Weight Tracker</h3>
+
+<input id="trackWeight" placeholder="Enter weight">
+<button onclick="saveWeight()">Save</button>
+
+<canvas id="chart"></canvas>
+<div id="history"></div>
+</div>
+
+</div>
+
+<!-- NAV -->
+<div class="nav">
+<button onclick="goTo('home')">Home</button>
+<button onclick="goTo('women')">Women</button>
+<button onclick="goTo('disease')">Disease</button>
+<button onclick="goTo('track')">Track</button>
+</div>
+
+</div>
+
+<script>
+
+/* NAVIGATION */
+function goTo(id){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+}
+
+/* LOGIN */
+function login(){
+ let name=document.getElementById('name').value.trim();
+ if(name===""){
+  alert("Enter your name");
+  return;
+ }
+ document.getElementById('welcome').innerText="Hello "+name+" 👋";
+ goTo('home');
+}
+
+/* BMI */
+function generatePlan(){
+ let h=document.getElementById('height').value;
+ let w=document.getElementById('weight').value;
+ let age=document.getElementById('age').value;
+ let gender=document.getElementById('gender').value;
+ let food=document.getElementById('foodType').value;
+
+ if(!h || !w || !age || !gender || !food){
+  alert("Fill all details");
+  return;
+ }
+
+ h=h/100;
+ let bmi=(w/(h*h)).toFixed(2);
+
+ let type=bmi<18.5?"Underweight":bmi<25?"Normal":"Overweight";
+
+ document.getElementById('bmi').innerText="BMI: "+bmi;
+ document.getElementById('result').innerText=type+" | "+gender+" | "+food;
+
+ loadPlan(type);
+}
+
+/* MEAL PLAN */
+function loadPlan(type){
+ let data={
+  Underweight:[
+   ['https://img.freepik.com/premium-photo/realistic-glass-bottle-milk-twisted-splash-blue-background-eps10-vector_1199132-83890.jpg','Milk'],
+   ['https://www.tastingtable.com/img/gallery/the-real-difference-between-bananas-and-baby-bananas/l-intro-1663622196.jpg','Banana']
+  ],
+  Normal:[
+   ['https://evergreenkitchen.ca/wp-content/uploads/2023/01/Overnight-Oats-with-Coconut-Milk-Evergreen-Kitchen-1.jpg','Oats'],
+   ['https://png.pngtree.com/background/20230606/original/pngtree-fruits-wallpaper-fruit-wallpaper-picture-image_2884694.jpg','Fruits']
+  ],
+  Overweight:[
+   ['https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg','Green Tea'],
+   ['https://images2.alphacoders.com/719/thumb-1920-719435.jpg','Apple']
+  ]
+ };
+
+ let html='';
+ data[type].forEach(f=>{
+  html+=`<div class="card"><img src="${f[0]}"><p>${f[1]}</p></div>`;
+ });
+
+ document.getElementById('mealPlan').innerHTML=html;
+}
+
+/* WOMEN */
+function loadWomen(){
+ let type=document.getElementById('womenType').value;
+
+ let data={
+  Pregnancy:[
+   ['Milk','https://img.freepik.com/premium-photo/realistic-glass-bottle-milk-twisted-splash-blue-background-eps10-vector_1199132-83890.jpg'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg'],
+   ['Eggs','https://cdn.pixabay.com/photo/2014/12/16/17/50/eggs-570540_1280.jpg'],
+   ['Fruits','https://png.pngtree.com/background/20230606/original/pngtree-fruits-wallpaper-fruit-wallpaper-picture-image_2884694.jpg']
+  ],
+  PCOS:[
+   ['Salad','https://png.pngtree.com/background/20230612/original/pngtree-salad-with-vegetables-in-a-black-bowl-picture-image_3176463.jpg'],
+   ['Nuts','https://foodtolive.com/wp-content/uploads/2016/06/Mix_Nuts-1-min.jpg'],
+   ['Broccoli','https://veritablevegetable.com/wp-content/uploads/2023/01/fresh-green-broccoli-macro-photo-top-view-scaled.jpg'],
+   ['Green Tea','https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg']
+  ],
+  Menstruation:[
+   ['Chocolate','https://www.baltana.com/files/wallpapers-3/Dark-Chocolate-Desktop-Wallpaper-12601.jpg'],
+   ['Banana','https://www.tastingtable.com/img/gallery/the-real-difference-between-bananas-and-baby-bananas/l-intro-1663622196.jpg'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg'],
+   ['Tea','https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg']
+  ],
+  Anemia:[
+   ['Beetroot','https://images-prod.healthline.com/hlcmsresource/images/AN_images/AN172-Beets-1296x728-Header.jpg'],
+   ['Orange','https://www.pngarts.com/files/3/Orange-Slice-Transparent-Images.png'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg'],
+   ['Dates','https://www.tastingtable.com/img/gallery/15-types-of-date-fruits-explained/l-intro-1671030210.jpg']
+  ]
+ };
+
+ let html='';
+ data[type].forEach(f=>{
+  html+=`<div class="card"><img src="${f[1]}"><p>${f[0]}</p></div>`;
+ });
+
+ document.getElementById('womenResult').innerHTML=html;
+}
+
+/* DISEASE */
+function loadDisease(){
+ let type=document.getElementById('diseaseType').value;
+
+ let data={
+  Diabetes:[
+   ['Oats','https://evergreenkitchen.ca/wp-content/uploads/2023/01/Overnight-Oats-with-Coconut-Milk-Evergreen-Kitchen-1.jpg'],
+   ['Brown Rice','https://allvegconsidered.com/wp-content/uploads/2023/11/how-to-cook-brown-rice-featured-1.jpg'],
+   ['Broccoli','https://veritablevegetable.com/wp-content/uploads/2023/01/fresh-green-broccoli-macro-photo-top-view-scaled.jpg'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg'],
+   ['Almonds','https://media.gettyimages.com/id/937085108/photo/almonds.jpg']
+  ],
+  Obesity:[
+   ['Green Tea','https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg'],
+   ['Salad','https://png.pngtree.com/background/20230612/original/pngtree-salad-with-vegetables-in-a-black-bowl-picture-image_3176463.jpg'],
+   ['Broccoli','https://veritablevegetable.com/wp-content/uploads/2023/01/fresh-green-broccoli-macro-photo-top-view-scaled.jpg'],
+   ['Nuts','https://foodtolive.com/wp-content/uploads/2016/06/Mix_Nuts-1-min.jpg']
+  ],
+  Hypertension:[
+   ['Broccoli','https://veritablevegetable.com/wp-content/uploads/2023/01/fresh-green-broccoli-macro-photo-top-view-scaled.jpg'],
+   ['Fruits','https://png.pngtree.com/background/20230606/original/pngtree-fruits-wallpaper-fruit-wallpaper-picture-image_2884694.jpg'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg'],
+   ['Green Tea','https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg']
+  ],
+  Heart:[
+   ['Brown Rice','https://allvegconsidered.com/wp-content/uploads/2023/11/how-to-cook-brown-rice-featured-1.jpg'],
+   ['Broccoli','https://veritablevegetable.com/wp-content/uploads/2023/01/fresh-green-broccoli-macro-photo-top-view-scaled.jpg'],
+   ['Nuts','https://foodtolive.com/wp-content/uploads/2016/06/Mix_Nuts-1-min.jpg'],
+   ['Green Tea','https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg']
+  ],
+  Immunity:[
+   ['Orange','https://www.pngarts.com/files/3/Orange-Slice-Transparent-Images.png'],
+   ['Fruits','https://png.pngtree.com/background/20230606/original/pngtree-fruits-wallpaper-fruit-wallpaper-picture-image_2884694.jpg'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg'],
+   ['Beetroot','https://images-prod.healthline.com/hlcmsresource/images/AN_images/AN172-Beets-1296x728-Header.jpg'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg']
+  ],
+  Thyroid:[
+   ['Eggs','https://cdn.pixabay.com/photo/2014/12/16/17/50/eggs-570540_1280.jpg'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg'],
+   ['Orange','https://www.pngarts.com/files/3/Orange-Slice-Transparent-Images.png'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg'],
+   ['Fruits','https://png.pngtree.com/background/20230606/original/pngtree-fruits-wallpaper-fruit-wallpaper-picture-image_2884694.jpg']
+  ],
+  Anemia:[
+   ['Beetroot','https://images-prod.healthline.com/hlcmsresource/images/AN_images/AN172-Beets-1296x728-Header.jpg'],
+   ['Spinach','https://www.maangchi.com/wp-content/uploads/2007/09/spinach-1.jpg'],
+   ['Dates','https://www.tastingtable.com/img/gallery/15-types-of-date-fruits-explained/l-intro-1671030210.jpg'],
+   ['Orange','https://www.pngarts.com/files/3/Orange-Slice-Transparent-Images.png'],
+   ['Eggs','https://cdn.pixabay.com/photo/2014/12/16/17/50/eggs-570540_1280.jpg']
+  ],
+  PCOS:[
+   ['Salad','https://png.pngtree.com/background/20230612/original/pngtree-salad-with-vegetables-in-a-black-bowl-picture-image_3176463.jpg'],
+   ['Nuts','https://foodtolive.com/wp-content/uploads/2016/06/Mix_Nuts-1-min.jpg'],
+   ['Broccoli','https://veritablevegetable.com/wp-content/uploads/2023/01/fresh-green-broccoli-macro-photo-top-view-scaled.jpg'],
+   ['Green Tea','https://cff2.earth.com/uploads/2022/07/29091859/Green-tea-scaled.jpg'],
+   ['Apple','https://images2.alphacoders.com/719/thumb-1920-719435.jpg']
+  ]
+ };
+
+ let html='<div class="disease-grid">';
+ data[type].forEach(f=>{
+  html+=`<div class="card"><img src="${f[1]}"><p>${f[0]}</p></div>`;
+ });
+ html+='</div>';
+
+ document.getElementById('diseaseResult').innerHTML=html;
+}
+
+/* TRACKER */
+let chart;
+
+function saveWeight(){
+ let w=document.getElementById('trackWeight').value;
+ if(!w) return;
+
+ let arr=JSON.parse(localStorage.getItem('weights')||"[]");
+ arr.push(w);
+ localStorage.setItem('weights',JSON.stringify(arr));
+ showHistory();
+ drawChart();
+}
+
+function showHistory(){
+ let arr=JSON.parse(localStorage.getItem('weights')||"[]");
+ let html='';
+ arr.forEach((w,i)=>{
+  html+=`<div class="card">Day ${i+1}: ${w} kg</div>`;
+ });
+ document.getElementById('history').innerHTML=html;
+}
+
+function drawChart(){
+ let arr=JSON.parse(localStorage.getItem('weights')||"[]");
+ let ctx=document.getElementById('chart');
+
+ if(chart) chart.destroy();
+
+ chart=new Chart(ctx,{
+  type:'line',
+  data:{
+   labels:arr.map((_,i)=>"Day "+(i+1)),
+   datasets:[{label:'Weight',data:arr}]
+  }
+ });
+}
+
+showHistory();
+drawChart();
+
+</script>
+
+</body>
+</html>
